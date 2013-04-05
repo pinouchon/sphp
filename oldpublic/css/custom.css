@@ -1,0 +1,65 @@
+
+/* Up/downvote */
+.buttons-vote {
+    float:left;width:29px
+}
+.graph-container {
+    float:left;
+    width: 70px;
+    height: 70px;
+}
+.graph {
+    margin-top: 2px;
+    width: 60px;
+    height: 60px;
+    border: 1px solid #aeaeae;
+    background-color: #eaeaea;
+}
+.bar {
+    width: 12px;
+    margin: 1px;
+    display: inline-block;
+    position: relative;
+    background-color: #aeaeae;
+    vertical-align: baseline;
+}
+.invbar {
+    background-color: #eaeaea;
+    width: 0px;
+}
+.btn-micro {
+    padding: 1px 7px;
+    font-size: 11px;
+    line-height: 16px;
+}
+
+/*header*/
+#header {
+    height: 35px;
+    background-color: #EEE;
+    margin-bottom: 5px;
+}
+
+.navbar .nav li.dropdown .dropdown-toggle .caret, .navbar .nav li.dropdown.open .caret {
+    border-top-color: #999;
+    border-bottom-color: #999;
+}
+.navbar .nav li.dropdown .dropdown-toggle .caret:hover, .navbar .nav li.dropdown.open .caret:hover {
+    color: #777;
+}
+
+.nav li.dropdown.open .caret, .nav li.dropdown.open.active .caret, .nav li.dropdown.open a:hover .caret {
+    color: #777;
+}
+
+.navbar .nav > li > a:hover {
+    color: #777;
+}
+
+.caret {
+    opacity: 1;
+}
+
+.dropdown-toggle:hover {
+    color: #777;
+}
