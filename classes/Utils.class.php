@@ -80,29 +80,6 @@ class Utils {
     }
 
     /**
-     * Example: hasOneMatch(array('hello', 'baz', 'qux'), 'baz') => true
-     *          hasOneMatch(array('hello', 'toto', 'qux'), 'tata') => false
-     * @param type $haystack
-     * @param type $needles
-     * @return boolean
-     */
-    public static function hasOneMatch($haystacks, $needle) {
-        // recherche vide (sous ie, le texte gris d'aide est soumis)
-        if ($needle == '' || Utils::startsWith($needle, 'rechercher par centre')) {
-            return true;
-        }
-        foreach ($haystacks as $haystack) {
-            if ($haystack == '') {
-                continue;
-            }
-            if (strpos(strtolower($haystack), strtolower($needle)) !== false) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Difference between two timestamps in days. $date2 - $date1
      * @see http://stackoverflow.com/questions/2040560/how-to-find-number-of-days-between-two-dates-using-php
      */
@@ -124,14 +101,6 @@ class Utils {
         return $interval->$unit;
     }
 
-    public static function callback($match) {
-        // Prepend http:// if no protocol specified
-        $completeUrl = $match[1] ? $match[0] : "http://{$match[0]}";
-
-        return '<a href="' . $completeUrl . '" rel="nofollow">'
-                . $match[2] . $match[3] . $match[4] . '</a>';
-    }
-
     /**
      * @see http://stackoverflow.com/questions/1188129/replace-urls-in-text-with-html-links
      */
@@ -146,12 +115,8 @@ class Utils {
         return preg_replace_callback("&\\b$rexProtocol$rexDomain$rexPort$rexPath$rexQuery$rexFragment(?=[?.!,;:\"]?(\s|$|<))&", 'Utils::callback', $input);
     }
 
-    public static function formatName($firtname, $lastname) {
-        return ucfirst(strtolower($firtname)) . " " . ucfirst(strtolower($lastname));
-    }
-
 }
 
 function urlFor($name, $params = array()) {
-    return App::instance()->urlFor($name, $params);
+    return App::getInstance()->urlFor($name, $params);
 }

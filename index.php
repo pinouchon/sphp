@@ -19,4 +19,5 @@ foreach (glob(_PATH_ . "model/*.class.php") as $filename) {
     include_once $filename;
 }
 
+error_reporting(E_ALL);
 App::getInstance()->Run();
