@@ -19,6 +19,7 @@
       <div id="contentwrapper">
         <div class="main_content">
 
+          <?= App::template('global#flash') ?>
           <?= $_html ?>
           <? # App::template('global#dashboard') ?> 
 
