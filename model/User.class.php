@@ -29,25 +29,14 @@
  * 
  *
  * Relations:
- * @property Tag[] $tags Tags or the user
- * @property Activity[] $likedActivities
- * @property User[] $likedUsers
- * @property Place[] $likedPlaces
- * @property Activity[] $activities
- * @property ApiCache $apiCache
+ * @property Item[] $items
  * @property Address $address
- * @property Badge[] $badges
- * @property Language[] $languages
- * @property Recommendation[] $receivedRecommendations
- * @property Recommendation[] $sentRecommendations
- * @property Comment[] $comments All the user's comments
- * @property Participation[] $participations All the user's participations
- * @property Message[] $receivedMessages
- * @property Message[] $sentMessages
- * @property Place[] $places placed that the user created
- * @property Like[] $receivedLikes the likes that the user received. Use likedByUser to get User object instead of Liked object.
- * @property User[] $likedByUsers Users that liked the current user
-
+ * @property Borrow[] $borrows
+ * @property Borrow[] $loans
+ * @property User[] $friends
+ * @property User[] $friendRequestsSent
+ * @property User[] $friendRequestsReceived
+ * @property Tag[] $tags
  *
  */
 class User extends MyModel {
@@ -56,81 +45,44 @@ class User extends MyModel {
     $this->validators['name'] = array("Validator::string", array('min' => 2, 'max' => 50));
     $this->validators['lastname'] = array("Validator::string", array('min' => 2, 'max' => 50));
     $this->validators['email'] = array("Validator::email", array('existant' => 1));
-    $this->validators['dob'] = array("Validator::birthday", array('min' => 18));
-    $this->validators['description'] = array("Validator::string", array('min' => 0, 'max' => 1500, 'presence' => false));
+    $this->validators['birthdate'] = array("Validator::birthday", array('min' => 18));
     parent::__construct();
   }
 
-  public function tags() {
-    return $this->has_many_through('Tag', 'Like', 'user_like', 'id_type')->where('like.type', 'keyword');
+  public function example() {
+    return $this->has_many_through('Item', 'Like', 'user_like', 'id_type')->where('like.type', 'keyword');
   }
-
-  public function likedActivities() {
-    return $this->has_many_through('Activity', 'Like', 'user_like', 'id_type')->where('like.type', 'activity');
+  
+  public function items() {
+    return $this->has_many('Item');
   }
-
-  public function likedUsers() {
-    return $this->has_many_through('User', 'Like', 'user_like', 'id_type')->where('like.type', 'user');
-  }
-
-  public function likedPlaces() {
-    return $this->has_many_through('Place', 'Like', 'user_like', 'id_type')->where('like.type', 'shop');
-  }
-
-  public function activities() {
-    return $this->has_many('Activity');
-  }
-
-  public function apiCache() {
-    return $this->has_one('ApiCache');
-  }
-
+  
   public function address() {
-    return $this->belongs_to('Address');
+    return $this->has_one('Address');
   }
-
-  public function badges() {
-    return $this->has_many_through('Badge');
+  
+  public function borrows() {
+    return $this->has_many('Borrow', 'user_id_borrower');
   }
-
-  public function languages() {
-    return $this->has_many_through('Language');
+  
+  public function loans() {
+    return $this->has_many('Borrow', 'user_id_lender');
   }
-
-  public function receivedRecommendations() {
-    return $this->has_many('Recommendation', 'user_id_to');
+  
+  public function friends() {
+    return $this->has_many_through('User', 'Friend', 'user_id_from', 'user_id_to')->where('status', 'accepted');
   }
-
-  public function sentRecommendations() {
-    return $this->has_many('Recommendation', 'user_id_from');
+  
+  public function friendRequestsSent() {
+    return $this->has_many_through('User', 'Friend', 'user_id_from', 'user_id_to')->where('status', 'pending');
   }
-
-  public function comments() {
-    return $this->has_many('Comment');
+  
+  public function friendRequestsReceived() {
+    return $this->has_many_through('User', 'Friend', 'user_id_to', 'user_id_from')->where('status', 'pending');
   }
-
-  public function participations() {
-    return $this->has_many('Participation');
-  }
-
-  public function receivedMessages() {
-    return $this->has_many('Message', 'user_id_to');
-  }
-
-  public function sentMessages() {
-    return $this->has_many('Message', 'user_id_from');
-  }
-
-  public function places() {
-    return $this->has_many('Place');
-  }
-
-  public function receivedLikes() {
-    return $this->has_many('Like', 'id_type')->where('Like.type', 'user');
-  }
-
-  public function likedByUsers() {
-    return $this->has_many_through('User', 'Like', 'id_type', 'user_like')->where('like.type', 'user');
+  
+  public function tags() {
+    return $this->has_many_through('Tag');
   }
 
   public function toString($verbose = false) {
@@ -216,42 +168,6 @@ class User extends MyModel {
 
   /**
    *
-   * @param string $email
-   * @param string $password
-   * @return User
-   */
-  public static function authenticate($email, $password) {
-    $user = ORM::for_table('user')->where('email', $email)->where('password', md5($password . 'M@g1c.T0k3n'))->find_one();
-    if ($user->loaded()) {
-      if ($user->actif == 1 && $user->ban == 0) {
-        return self::_authenticate($user);
-      } else {
-        //Si le membre est banni
-        if ($user->ban == 1) {
-          AtSlim::getApp()->flash('error', 'Votre compte a été banni, vous ne pouvez pas vous connecter actuellement.');
-          AtSlim::redirectFor('homepage#homepageGet');
-        }
-        //Si le membre n'a pas encore activé son compte
-        elseif ($user->actif == 0) {
-          AtSlim::getApp()->flash('error', 'Votre compte n\'a pas été activé, merci de procéder à l\'activation de ce dernier pour pouvoir vous connecter');
-          AtSlim::redirectFor('homepage#homepageGet');
-        }
-      }
-    } else {
-      return (false);
-    }
-  }
-
-  public static function forceAuthenticate($id) {
-    $user = ORM::for_table('user')->where('id', $id)->find_one();
-    if ($user != false) {
-      return self::_authenticate($user);
-    }
-    return (false);
-  }
-
-  /**
-   *
    * @return boolean
    */
   public static function isAuthenticated() {
@@ -264,63 +180,6 @@ class User extends MyModel {
     if (self::isAuthenticated())
       return $_SESSION['auth_user'];
     return null;
-  }
-
-  public static function getAuthUserObj() {
-    if (self::isAuthenticated()) {
-      // todo: change that
-      return User::factory()->find_one($_SESSION['auth_user']['id']);
-      return $_SESSION['auth_user_obj'];
-    }
-//        $_SESSION['redirect_after_login'] = $_SESSION['PHP_SELF'];
-//        AtSlim::getApp()->flash('error', 'Vous devez être connecté pour aller sur cette page');
-//        AtSlim::redirectFor('login#loginGet');
-    return null;
-  }
-
-  public static function getAuthUserName() {
-    if (!self::isAuthenticated()) {
-      return 'Visiteur';
-    }
-    $user = self::getAuthUserObj();
-    return ucfirst($user->name) . ' ' . ucfirst($user->lastname);
-  }
-
-  /**
-   * Check if the user is authenticated. If he is not, prompt for login, and redirects to
-   * $redirect after login. If the user is authenticated, returns the auth_user.
-   * @param string $redirect, ex: homepage#homepageGet
-   * @return array, the auth user as array
-   */
-  public static function checkAuth($redirect = 'homepage#homepageGet', $message = 'Vous devez vous connecter pour aller sur cette page') {
-    if (self::isAuthenticated() == false) {
-      AtSlim::getApp()->flash('error', $message);
-      $_SESSION['redirect_after_login'] = $redirect;
-//            if (isset($_SERVER['HTTP_REFERER'])) {
-//                AtSlim::getApp()->redirect($_SERVER['HTTP_REFERER']);
-//            }
-      AtSlim::redirectFor('account#registerGet');
-      // pop the login box
-    }
-    return self::getAuthUser();
-  }
-
-  /**
-   * Get the friend of a given user id (like, type user=friend)
-   * Use like this in twig: {{ friend.name }} {{ friend.lastname }} {{ friend.location }}
-   * @param type $userId
-   * @return type
-   */
-  public static function friendsOf($userId) {
-    return ORM::for_table('user')
-                    ->select('friend.*')->select('google_assign.name', 'location')
-                    ->join('like', 'l.user_like = user.id AND type="user"', 'l')
-                    ->join('user', 'friend.id = l.id_type', 'friend')
-                    ->join('google_assign', 'google_assign.id = friend.city')
-                    ->where_equal('user.id', $userId)
-                    ->where_not_equal('friend.id', $userId)
-                    ->group_by('friend.id')
-                    ->find_many();
   }
 
   public static function getUsersAround($latidude, $longitude, $distance, $where = '') {
@@ -343,32 +202,20 @@ class User extends MyModel {
     return $usersAround;
   }
 
-  public static function checkUserId($userId) {
-    $user = ORM::for_table('User')->select('id')->where_equal('user.id', $userId)->find_one();
-    return $user != false;
-  }
-
-  public static function isAdmin() {
-    if (!self::isAuthenticated()) {
-      return false;
-    }
-    return in_array(User::getAuthUserObj()->id, array(
-        518, // guillaume
-        119, // arnaud
-        5, // thibaut
-        243, // benjamin
-        113, // antoine
-        1, // fred
-        93 // allan
-    ));
-  }
-
   public function getUrlSlug() {
-    return Utils::slugify(Utils::formatName($this->name, $this->lastname));
+    return Utils::slugify($this->fullname());
   }
 
   public function fullname() {
-    return Utils::formatName($this->firstname, $this->lastname);
+    return "$this->firstname $this->lastname";
+  }
+  
+  public static function isActivated() {
+    return false;
+  }
+  
+  public static function has3objets() {
+    return false;
   }
 
 }

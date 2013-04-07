@@ -23,7 +23,7 @@ class MyModel extends Model {
     return $this;
   }
 
-  public function countErrorss($errors) {
+  public function countErrors($errors) {
     $nb = 0;
     foreach ($errors as $content) {
       if ($content != false)

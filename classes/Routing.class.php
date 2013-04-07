@@ -16,6 +16,9 @@ class Routing {
     public static function loadRoutes() {
         $app = App::getInstance();
 
+        // validator module
+        $app->get_('/validate', 'ValidatorActions::validate');
+        
         // homepage module
         $app->get_('/', "HomepageActions::homepage");
 
